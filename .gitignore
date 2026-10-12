@@ -1,0 +1,11 @@
+.terraform/
+*.tfstate
+*.tfstate.*
+*.tfvars
+!*.tfvars.example
+*.zip
+*.plan
+*-destroy.tfplan
+credentials
+secrets/
+.env

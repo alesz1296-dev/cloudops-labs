@@ -1,0 +1,3 @@
+aws_region = "us-east-1"
+project_name = "cloudops-01-monitoring"
+environment = "sandbox"
