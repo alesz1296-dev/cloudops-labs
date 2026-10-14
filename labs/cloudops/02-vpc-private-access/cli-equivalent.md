@@ -1,4 +1,4 @@
-# AWS CLI equivalent (PowerShell)
+﻿# AWS CLI equivalent (PowerShell)
 
 Run from an approved workstation. Replace placeholders; never put credentials in this file. The commands create the network and endpoint. API Gateway/Lambda commands should reuse the tested packaging pattern from Lab 01 and must use the IDs printed by these queries.
 
@@ -63,3 +63,5 @@ aws ec2 describe-network-interfaces --filters "Name=tag:Name,Values=$Prefix-*" -
 ```
 
 Delete only IDs recorded for this prefix and follow the dependency order in the walkthrough. Do not use a wildcard delete against a shared VPC.
+
+

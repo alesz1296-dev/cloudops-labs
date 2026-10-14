@@ -1,4 +1,4 @@
-# 02-vpc-private-access — VPC networking and private access
+﻿# 02-vpc-private-access â€” VPC networking and private access
 
 **Status:** Study material reviewed and expanded; no infrastructure is deployed by this repository.
 
@@ -56,7 +56,7 @@ SSM operator -> private client subnet -> execute-api interface endpoint ENIs
 1. Create one VPC with DNS resolution and hostnames enabled, two private subnets, local-only route tables, and explicit tags.
 2. Create client and endpoint security groups. Allow HTTPS from the client group to the endpoint group only. Document the default NACL before changing it.
 3. Launch a disposable SSM-managed client without a public IP, or use an approved private client. Verify an SSM session before testing the API.
-4. Deploy a tiny Lambda returning fixed JSON and create a **private** REST API with `GET /health` and stage `sandbox`.
+4. Deploy a tiny Lambda returning fixed JSON and create a **private** REST API with `GET /health` and stage `sandbox` (the console may display it as `Sandbox`; use the exact displayed case in the invoke URL).
 5. Create an `execute-api` interface endpoint in both private subnets, enable private DNS, attach the endpoint security group, and record its policy.
 6. Restrict endpoint and API resource policies to the intended endpoint/account/principal. Save the baseline policy.
 7. From the client, resolve the API hostname and call `/health`. Record DNS, status, body, request ID, and logs.
@@ -65,9 +65,9 @@ SSM operator -> private client subnet -> execute-api interface endpoint ENIs
 
 Run and restore each drill separately.
 
-**A — transport failure:** remove HTTPS ingress from the endpoint security group. DNS should still resolve, but the request should fail to connect. Restore the rule and prove recovery.
+**A â€” transport failure:** remove HTTPS ingress from the endpoint security group. DNS should still resolve, but the request should fail to connect. Restore the rule and prove recovery.
 
-**B — policy failure:** restore networking, then deny the endpoint or principal in the endpoint/API resource policy. The request should reach the service and return an authorization-style failure. Restore the policy and prove recovery.
+**B â€” policy failure:** restore networking, then deny the endpoint or principal in the endpoint/API resource policy. The request should reach the service and return an authorization-style failure. Restore the policy and prove recovery.
 
 Optional extension: change a NACL rule, compare its stateless return-path behavior with a stateful security group, then restore it. SNS notifications are outside this lab.
 
@@ -90,3 +90,14 @@ Delete API routes/stage, Lambda, log groups, endpoint, security groups, client, 
 - Why is a security group stateful while a NACL is stateless?
 - Which identity performed each action, and where is pass-role required?
 - What remained billable after cleanup, and how did you verify it?
+
+### Why the endpoints exist
+
+The private EC2 client has no public IPv4 address. The SSM interface endpoints (`ssm`, `ssmmessages`, and `ec2messages`) provide private Systems Manager registration and Session Manager connectivity over HTTPS/TCP 443. The separate `execute-api` interface endpoint carries the application request to the private API Gateway. SSM manages the test client; `execute-api` provides the private application path.
+
+
+
+### Lambda deployment package
+
+The lab includes [`lambda.zip`](lambda.zip), a minimal Python deployment package containing `lambda_function.py`. Upload the ZIP when creating or updating the function and set the handler to `lambda_function.lambda_handler`. The handler returns the synthetic response `{"lab":"cloudops-02","status":"ok"}` with HTTP status `200`.
+

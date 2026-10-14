@@ -1,4 +1,4 @@
-# Terraform section
+﻿# Terraform section
 
 Keep this in its own directory and state file. Do not reuse an enterprise network root or shared state.
 
@@ -44,7 +44,7 @@ Create `aws_vpc_endpoint` with `vpc_endpoint_type = "Interface"`, service `com.a
 
 ## `api.tf`
 
-Define the disposable Lambda, its execution role, a private `aws_api_gateway_rest_api` with `endpoint_configuration { types = ["PRIVATE"]; vpc_endpoint_ids = [aws_vpc_endpoint.execute_api.id] }`, `/health` GET method, Lambda integration, deployment, and `sandbox` stage. Add an API resource policy restricted to the lab endpoint/account.
+Define the disposable Lambda, its execution role, a private `aws_api_gateway_rest_api` with `endpoint_configuration { types = ["PRIVATE"]; vpc_endpoint_ids = [aws_vpc_endpoint.execute_api.id] }`, `/health` GET method, Lambda integration, deployment, and `sandbox` stage (the console may display it as `Sandbox`; use the exact displayed case in the invoke URL). Add an API resource policy restricted to the lab endpoint/account.
 
 ## `client.tf` (optional)
 
@@ -78,3 +78,63 @@ terraform apply destroy.tfplan
 ```
 
 Review the plan for public IPs, NAT gateways, unexpected route targets, broad policies, and resources outside the prefix before applying. Terraform plan does not change AWS; apply only the reviewed plan. Keep the generated state and plan files private. Use the same two failure drills after the baseline apply, then restore the Terraform baseline and destroy it.
+
+
+
+## Remaining Terraform implementation plan
+
+The next session should implement and validate these resource layers in dependency order:
+
+### 7. IAM
+
+- EC2 trust role
+- `AmazonSSMManagedInstanceCore` policy attachment
+- EC2 instance profile
+
+### 8. SSM interface endpoints
+
+Create Interface VPC endpoints in both private subnets with private DNS enabled and the endpoint security group:
+
+- `com.amazonaws.us-east-1.ssm`
+- `com.amazonaws.us-east-1.ssmmessages`
+- `com.amazonaws.us-east-1.ec2messages`
+
+### 9. EC2 client
+
+- Approved AMI variable
+- Private subnet ID
+- Client security group
+- EC2 instance profile
+- No public IP address
+- IMDSv2 required
+
+### 10. Lambda
+
+- Least-privilege execution role with CloudWatch Logs permissions
+- Function using `lambda_function.lambda_handler`
+- CloudWatch log group
+- Synthetic `cloudops-02 / ok` response
+
+### 11. Private API Gateway
+
+- Private REST API
+- Resource policy restricted to the lab VPC or endpoint
+- `/health` resource
+- `GET` method
+- Lambda proxy integration
+- Deployment and stage
+
+### 12. Execute-API interface endpoint
+
+- `com.amazonaws.us-east-1.execute-api`
+- Both private subnets
+- Endpoint security group
+- Private DNS enabled
+
+### 13. API endpoint association
+
+Add the execute-api endpoint ID to the private API's `vpc_endpoint_ids` configuration. Save the API settings and redeploy after changes.
+
+### 14. Outputs and validation
+
+Output the VPC, subnet, route-table, security-group, IAM, endpoint, EC2, Lambda, API, stage, and log-group identifiers. Validate Fleet Manager registration, private DNS resolution, TLS connectivity, and the expected HTTP 200 response before running failure drills.
